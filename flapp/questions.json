@@ -1,0 +1,302 @@
+{
+  "this": {
+    "label": "⚡ this Keyword",
+    "color": "#e8533f",
+    "cards": [
+      {
+        "q": "Regular fn vs Arrow fn — this rule",
+        "a": [
+          { "t": "Regular functions → this based on CALL-SITE (how it's called)" },
+          { "t": "Arrow functions → this based on LEXICAL SCOPE (where it's created)" }
+        ]
+      },
+      {
+        "q": "Priority order of this",
+        "a": [
+          { "t": "1. new          → fresh object (HIGHEST)", "c": "code" },
+          { "t": "2. bind/call/apply → what you set",         "c": "code" },
+          { "t": "3. obj.method()  → obj",                    "c": "code" },
+          { "t": "4. fn()          → undefined (strict) / window (sloppy)", "c": "code" },
+          { "t": "5. Arrow fn      → lexical (no own this)",  "c": "code" }
+        ]
+      },
+      {
+        "q": "What is call-site?",
+        "a": [
+          { "t": "The exact place where a function is CALLED — not where it's defined." },
+          { "t": "obj.greet()  → call-site is obj",           "c": "code" },
+          { "t": "greet()      → call-site is nothing (bare)","c": "code" },
+          { "t": "new Greet()  → call-site is new",           "c": "code" }
+        ]
+      },
+      {
+        "q": "What is lexical scope?",
+        "a": [
+          { "t": "Where the function is WRITTEN in the code." },
+          { "t": "Arrow fns grab this from the nearest surrounding FUNCTION's lexical scope." },
+          { "t": "Object literals, blocks, loops = invisible. Only functions count.", "c": "highlight" }
+        ]
+      },
+      {
+        "q": "Where does lexical scope EXIST?",
+        "a": [
+          { "t": "✅ Regular functions   → function greet() {}", "c": "yes" },
+          { "t": "✅ Method shorthand   → { greet() {} }",       "c": "yes" },
+          { "t": "✅ Constructors       → function Person() {}", "c": "yes" },
+          { "t": "✅ Class methods      → class Dog { bark() {} }", "c": "yes" }
+        ]
+      },
+      {
+        "q": "Where does lexical scope NOT exist?",
+        "a": [
+          { "t": "❌ Object literals    → const obj = { ... }", "c": "no" },
+          { "t": "❌ if/else blocks     → if (true) { ... }",   "c": "no" },
+          { "t": "❌ for/while loops    → for (...) { ... }",   "c": "no" },
+          { "t": "❌ switch blocks      → switch { ... }",      "c": "no" },
+          { "t": "❌ Arrow functions    → () => { ... }",       "c": "no" },
+          { "t": "❌ Standalone blocks  → { ... }",             "c": "no" }
+        ]
+      },
+      {
+        "q": "The destructuring trap",
+        "a": [
+          { "t": "const { greet } = obj;",                     "c": "code" },
+          { "t": "greet();  // this = undefined!",             "c": "code" },
+          { "t": "Extracting a method kills its connection to obj. Becomes a bare call." },
+          { "t": "Fix: bind it → obj.greet.bind(obj)",         "c": "highlight" }
+        ]
+      },
+      {
+        "q": "The setTimeout trap + fix",
+        "a": [
+          { "t": "setTimeout(function() {",                    "c": "code" },
+          { "t": "  this.x;  // ❌ bare call → undefined",     "c": "code" },
+          { "t": "}, 100);",                                   "c": "code" },
+          { "t": "",                                           "c": "spacer" },
+          { "t": "Fix: use arrow function",                    "c": "highlight" },
+          { "t": "setTimeout(() => {",                         "c": "code" },
+          { "t": "  this.x;  // ✅ grabs this from outer fn",  "c": "code" },
+          { "t": "}, 100);",                                   "c": "code" }
+        ]
+      },
+      {
+        "q": "bind() vs call() vs apply()",
+        "a": [
+          { "t": "bind()   → returns NEW fn, this LOCKED forever", "c": "code" },
+          { "t": "call()   → calls IMMEDIATELY, args one by one",  "c": "code" },
+          { "t": "apply()  → calls IMMEDIATELY, args as ARRAY",    "c": "code" },
+          { "t": "ES6 spread made apply() mostly unnecessary." },
+          { "t": "fn.call(ctx, ...args) === fn.apply(ctx, args)",  "c": "code" }
+        ]
+      },
+      {
+        "q": "Can you re-bind a bound function?",
+        "a": [
+          { "t": "NO." },
+          { "t": "const b1 = fn.bind({ name: 'A' });",  "c": "code" },
+          { "t": "const b2 = b1.bind({ name: 'B' });",  "c": "code" },
+          { "t": "b2();  // still 'A'",                  "c": "code" },
+          { "t": "Once locked by bind → locked forever. Only new overrides.", "c": "highlight" }
+        ]
+      },
+      {
+        "q": "new vs bind — who wins?",
+        "a": [
+          { "t": "new ALWAYS wins." },
+          { "t": "const Bound = Person.bind({ name: 'Forced' });", "c": "code" },
+          { "t": "const p = new Bound('Venky');",                  "c": "code" },
+          { "t": "p.name  // 'Venky' — new created fresh object",  "c": "code" },
+          { "t": "Priority: new > bind > call/apply > method > bare", "c": "highlight" }
+        ]
+      },
+      {
+        "q": "Arrow fn in object literal — the trap",
+        "a": [
+          { "t": "const obj = {",                              "c": "code" },
+          { "t": "  name: 'Venky',",                           "c": "code" },
+          { "t": "  greet: () => this.name  // ❌ undefined",  "c": "code" },
+          { "t": "};",                                         "c": "code" },
+          { "t": "obj is NOT a scope. Arrow skips it → grabs this from global.", "c": "highlight" },
+          { "t": "Fix: use method shorthand → greet() { return this.name; }", "c": "highlight" }
+        ]
+      }
+    ]
+  },
+
+  "scope-closures": {
+    "label": "🔍 Scope & Closures",
+    "color": "#3a7bd5",
+    "cards": [
+      {
+        "q": "What is scope?",
+        "a": [
+          { "t": "The zone where a variable can be accessed." },
+          { "t": "Block scope   → let, const  (inside { } only)",          "c": "code" },
+          { "t": "Function scope → var  (hoisted to nearest function)",    "c": "code" }
+        ]
+      },
+      {
+        "q": "var vs let vs const — scope",
+        "a": [
+          { "t": "var   → function scoped. Leaks out of blocks.", "c": "code" },
+          { "t": "let   → block scoped. Stays inside { }.",       "c": "code" },
+          { "t": "const → block scoped + can't reassign.",        "c": "code" },
+          { "t": "",                                              "c": "spacer" },
+          { "t": "if (true) {",                                   "c": "code" },
+          { "t": "  var x = 1;   // leaks out",                   "c": "code" },
+          { "t": "  let y = 2;   // stays inside",                "c": "code" },
+          { "t": "}",                                             "c": "code" },
+          { "t": "console.log(x); // 1",                          "c": "code" },
+          { "t": "console.log(y); // ReferenceError",             "c": "code" }
+        ]
+      },
+      {
+        "q": "What is the scope chain?",
+        "a": [
+          { "t": "JS looks up a variable starting at current scope, then walks UP through parent scopes until it finds it or hits global." },
+          { "t": "✅ Inner functions can see outer variables.",    "c": "yes" },
+          { "t": "❌ Outer functions CANNOT see inner variables.", "c": "no" }
+        ]
+      },
+      {
+        "q": "What is a closure?",
+        "a": [
+          { "t": "A function that REMEMBERS variables from its outer scope — even after the outer function has finished running." },
+          { "t": "",                                              "c": "spacer" },
+          { "t": "function makeCounter() {",                      "c": "code" },
+          { "t": "  let count = 0;",                              "c": "code" },
+          { "t": "  return () => ++count;",                       "c": "code" },
+          { "t": "}",                                             "c": "code" },
+          { "t": "const c = makeCounter();  // done running",     "c": "code" },
+          { "t": "c();  // 1 — count still alive!",               "c": "code" }
+        ]
+      },
+      {
+        "q": "The classic closure bug (var in for loop)",
+        "a": [
+          { "t": "for (var i = 0; i < 3; i++) {",                 "c": "code" },
+          { "t": "  setTimeout(() => console.log(i), 100);",      "c": "code" },
+          { "t": "}",                                             "c": "code" },
+          { "t": "// Logs: 3, 3, 3 — NOT 0, 1, 2",               "c": "code" },
+          { "t": "Why? var i is shared across ALL iterations. By the time setTimeout fires, i = 3.", "c": "highlight" },
+          { "t": "Fix: use let → for (let i = 0; ...) → logs 0, 1, 2", "c": "highlight" }
+        ]
+      },
+      {
+        "q": "Does this get captured by closures?",
+        "a": [
+          { "t": "NO." },
+          { "t": "this is NOT a variable. Decided fresh on every call." },
+          { "t": "✅ Closures capture VARIABLES (let, const, var).", "c": "yes" },
+          { "t": "❌ this is decided by CALL-SITE rules only.",      "c": "no" }
+        ]
+      },
+      {
+        "q": "Shadowing — what is it?",
+        "a": [
+          { "t": "When an inner scope declares a variable with the same name as an outer scope — the inner one HIDES the outer one." },
+          { "t": "",                                              "c": "spacer" },
+          { "t": "var x = 'global';",                             "c": "code" },
+          { "t": "function test() {",                             "c": "code" },
+          { "t": "  var x = 'local';   // shadows global x",      "c": "code" },
+          { "t": "  console.log(x);    // 'local'",               "c": "code" },
+          { "t": "}",                                             "c": "code" },
+          { "t": "test();",                                       "c": "code" },
+          { "t": "console.log(x);      // 'global' — untouched",  "c": "code" }
+        ]
+      },
+      {
+        "q": "var shadowing + hoisting trap",
+        "a": [
+          { "t": "var x = 'global';",                             "c": "code" },
+          { "t": "function test() {",                             "c": "code" },
+          { "t": "  console.log(x);    // undefined ← WHY?",      "c": "code" },
+          { "t": "  var x = 'local';",                            "c": "code" },
+          { "t": "}",                                             "c": "code" },
+          { "t": "The inner var x is hoisted to top of test(). It shadows global x BEFORE the assignment runs. So at log time, x exists but = undefined.", "c": "highlight" }
+        ]
+      },
+      {
+        "q": "let shadowing + TDZ trap",
+        "a": [
+          { "t": "var x = 'global';",                             "c": "code" },
+          { "t": "function test() {",                             "c": "code" },
+          { "t": "  console.log(x);    // ReferenceError!",       "c": "code" },
+          { "t": "  let x = 'local';",                            "c": "code" },
+          { "t": "}",                                             "c": "code" },
+          { "t": "let x is hoisted but locked (TDZ). It shadows global x, but you can't touch it until the let line runs → crash.", "c": "highlight" }
+        ]
+      },
+      {
+        "q": "typeof on undeclared vs TDZ variable",
+        "a": [
+          { "t": "typeof undeclared  // 'undefined' — safe, no crash", "c": "code" },
+          { "t": "typeof tzd_var     // ReferenceError! — crashes",    "c": "code" },
+          { "t": "let tzd_var = 10;",                                  "c": "code" },
+          { "t": "",                                                   "c": "spacer" },
+          { "t": "Undeclared = JS doesn't know it → returns 'undefined' safely.", "c": "yes" },
+          { "t": "TDZ = JS knows it exists but it's locked → crash even with typeof.", "c": "no" }
+        ]
+      }
+    ]
+  },
+
+  "hoisting": {
+    "label": "🏗️ Hoisting",
+    "color": "#f39c12",
+    "cards": [
+      {
+        "q": "What is hoisting?",
+        "a": [
+          { "t": "Before running code, JS scans and moves DECLARATIONS to top of their scope." },
+          { "t": "var       → declaration hoisted, value is NOT",         "c": "code" },
+          { "t": "let/const → hoisted but NOT initialized (TDZ)",         "c": "code" },
+          { "t": "fn declaration → FULLY hoisted (name + body)",         "c": "code" },
+          { "t": "fn expression  → only the var is hoisted",             "c": "code" }
+        ]
+      },
+      {
+        "q": "var hoisting — what happens?",
+        "a": [
+          { "t": "console.log(x);  // undefined — not an error!", "c": "code" },
+          { "t": "var x = 5;",                                    "c": "code" },
+          { "t": "",                                              "c": "spacer" },
+          { "t": "JS actually sees:",                             },
+          { "t": "var x;            // hoisted to top",           "c": "code" },
+          { "t": "console.log(x);  // undefined",                "c": "code" },
+          { "t": "x = 5;           // assignment stays here",    "c": "code" }
+        ]
+      },
+      {
+        "q": "let / const — what is TDZ?",
+        "a": [
+          { "t": "console.log(y);  // ReferenceError!",          "c": "code" },
+          { "t": "let y = 10;",                                  "c": "code" },
+          { "t": "TDZ = Temporal Dead Zone",                     "c": "highlight" },
+          { "t": "Gap between scope start and declaration. Touch it in this gap → crash." }
+        ]
+      },
+      {
+        "q": "Function declaration vs expression hoisting",
+        "a": [
+          { "t": "// Declaration → FULLY hoisted",               "c": "code" },
+          { "t": "console.log(add(1,2));  // 3 ✅",              "c": "code" },
+          { "t": "function add(a,b) { return a + b; }",          "c": "code" },
+          { "t": "",                                             "c": "spacer" },
+          { "t": "// Expression → only var hoisted",             "c": "code" },
+          { "t": "console.log(mul(1,2));  // TypeError ❌",      "c": "code" },
+          { "t": "var mul = function(a,b) { return a * b; };",   "c": "code" }
+        ]
+      },
+      {
+        "q": "Declaration vs Expression — priority fight",
+        "a": [
+          { "t": "console.log(foo());  // 'declaration'",                 "c": "code" },
+          { "t": "function foo() { return 'declaration'; }",             "c": "code" },
+          { "t": "var foo = function() { return 'expression'; };",       "c": "code" },
+          { "t": "fn declarations hoist FIRST + FULLY. var foo already exists → doesn't overwrite. Expression assignment hasn't run yet.", "c": "highlight" }
+        ]
+      }
+    ]
+  }
+}

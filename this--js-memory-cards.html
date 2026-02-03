@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JS Engine — Memory Cards</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: #08090c;
+    color: #d4d8e0;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: #0c0e12;
+    border-bottom: 1px solid #1e2128;
+    padding: 1rem 1.5rem;
+    text-align: center;
+  }
+  .header p {
+    color: #444;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 0.3rem;
+  }
+  .header h1 {
+    color: #fff;
+    font-size: 1.1rem;
+    font-family: Georgia, serif;
+    font-weight: 400;
+  }
+
+  /* ── Topic Tabs ── */
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #0a0b0e;
+    border-bottom: 1px solid #1e2128;
+    flex-wrap: wrap;
+  }
+  .tab {
+    background: transparent;
+    border: 1px solid #1e2128;
+    color: #666;
+    padding: 0.45rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: 'Courier New', monospace;
+    transition: all 0.2s;
+  }
+  .tab:hover { border-color: #333; color: #999; }
+  .tab.active {
+    border-color: var(--tab-color-border);
+    color: var(--tab-color);
+    background: var(--tab-color-bg);
+  }
+  .tab .count { color: #333; margin-left: 0.4rem; }
+
+  /* ── Search ── */
+  .search-wrap {
+    max-width: 700px;
+    margin: 1rem auto;
+    padding: 0 1rem;
+  }
+  .search-wrap input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: #0c0e12;
+    border: 1px solid #1e2128;
+    border-radius: 6px;
+    color: #aaa;
+    font-size: 0.78rem;
+    font-family: 'Courier New', monospace;
+    outline: none;
+  }
+  .search-wrap input:focus { border-color: #333; }
+
+  /* ── Cards ── */
+  .cards-wrap {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 0 1rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .card {
+    background: #0c0e12;
+    border: 1px solid #1e2128;
+    border-radius: 10px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+  .card:hover { border-color: #2a2e35; }
+  .card.flipped { background: #0f1a1a; border-color: var(--card-border); }
+
+  .card-front {
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-front .question {
+    font-size: 0.82rem;
+    color: #ccc;
+    font-family: Georgia, serif;
+    font-weight: 600;
+  }
+  .card.flipped .card-front {
+    border-bottom: 1px solid var(--card-border-light);
+    background: var(--card-front-bg);
+  }
+  .card.flipped .card-front .question {
+    color: var(--card-color);
+    font-weight: 400;
+  }
+  .card-front .toggle-hint {
+    font-size: 0.7rem;
+    color: #333;
+    white-space: nowrap;
+    margin-left: 0.75rem;
+  }
+
+  .card-back {
+    display: none;
+    padding: 0.85rem 1rem;
+  }
+  .card.flipped .card-back { display: block; }
+
+  .card-back .line {
+    font-size: 0.78rem;
+    color: #999;
+    line-height: 1.7;
+    font-family: Georgia, serif;
+  }
+  .card-back .line.code {
+    font-size: 0.74rem;
+    color: #7ec8e3;
+    font-family: 'Courier New', monospace;
+    background: #0a0c10;
+    padding: 0.08rem 0.5rem;
+    border-radius: 2px;
+    line-height: 1.8;
+  }
+  .card-back .line.highlight {
+    font-size: 0.74rem;
+    color: #f39c12;
+    background: #1a1500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    border-left: 2px solid #f39c12;
+    margin-top: 0.3rem;
+  }
+  .card-back .line.yes { color: #2ecc71; font-family: 'Courier New', monospace; font-size: 0.76rem; line-height: 1.9; }
+  .card-back .line.no  { color: #e74c3c; font-family: 'Courier New', monospace; font-size: 0.76rem; line-height: 1.9; }
+  .card-back .line.spacer { height: 0.5rem; }
+
+  .no-results {
+    text-align: center;
+    color: #333;
+    padding: 2rem;
+    font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <p>Quick Reference — Peek Anytime</p>
+  <h1>JS Engine Memory Cards</h1>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="search-wrap">
+  <input type="text" id="search" placeholder="🔍 search cards..." oninput="render()">
+</div>
+
+<div class="cards-wrap" id="cards"></div>
+
+<script>
+// ─── DATA ─────────────────────────────────────────────────────
+const topics = [
+  {
+    id: "this",
+    label: "⚡ this",
+    color: "#e8533f",
+    cards: [
+      {
+        q: "Regular fn vs Arrow fn — this rule",
+        a: [
+          { t: "Regular functions → this based on CALL-SITE (how it's called)" },
+          { t: "Arrow functions → this based on LEXICAL SCOPE (where it's created)" }
+        ]
+      },
+      {
+        q: "Priority order of this",
+        a: [
+          { t: "1. new          → fresh object (HIGHEST)", c: "code" },
+          { t: "2. bind/call/apply → what you set",         c: "code" },
+          { t: "3. obj.method()  → obj",                    c: "code" },
+          { t: "4. fn()          → undefined (strict) / window (sloppy)", c: "code" },
+          { t: "5. Arrow fn      → lexical (no own this)",  c: "code" }
+        ]
+      },
+      {
+        q: "What is call-site?",
+        a: [
+          { t: "The exact place where a function is CALLED — not where it's defined." },
+          { t: "obj.greet()  → call-site is obj",  c: "code" },
+          { t: "greet()      → call-site is nothing (bare)", c: "code" },
+          { t: "new Greet()  → call-site is new",  c: "code" }
+        ]
+      },
+      {
+        q: "What is lexical scope?",
+        a: [
+          { t: "Where the function is WRITTEN in the code." },
+          { t: "Arrow functions grab this from the nearest surrounding FUNCTION's lexical scope." },
+          { t: "Object literals, blocks, loops = invisible. Only functions count.", c: "highlight" }
+        ]
+      },
+      {
+        q: "Where does lexical scope EXIST?",
+        a: [
+          { t: "✅ Regular functions   → function greet() {}", c: "yes" },
+          { t: "✅ Method shorthand   → { greet() {} }",       c: "yes" },
+          { t: "✅ Constructors       → function Person() {}", c: "yes" },
+          { t: "✅ Class methods      → class Dog { bark() {} }", c: "yes" }
+        ]
+      },
+      {
+        q: "Where does lexical scope NOT exist?",
+        a: [
+          { t: "❌ Object literals    → const obj = { ... }", c: "no" },
+          { t: "❌ if/else blocks     → if (true) { ... }",   c: "no" },
+          { t: "❌ for/while loops    → for (...) { ... }",   c: "no" },
+          { t: "❌ switch blocks      → switch { ... }",      c: "no" },
+          { t: "❌ Arrow functions    → () => { ... }",       c: "no" },
+          { t: "❌ Standalone blocks  → { ... }",             c: "no" }
+        ]
+      },
+      {
+        q: "The destructuring trap",
+        a: [
+          { t: "const { greet } = obj;",  c: "code" },
+          { t: "greet();  // this = undefined!",  c: "code" },
+          { t: "Extracting a method kills its connection to obj. It becomes a bare function call.", c: "" },
+          { t: "Fix: bind it → obj.greet.bind(obj)", c: "highlight" }
+        ]
+      },
+      {
+        q: "The setTimeout trap",
+        a: [
+          { t: "setTimeout(function() {",  c: "code" },
+          { t: "  this.x;  // ❌ bare call → undefined", c: "code" },
+          { t: "}, 100);",                 c: "code" },
+          { t: "", c: "spacer" },
+          { t: "Fix: use arrow function", c: "highlight" },
+          { t: "setTimeout(() => {",       c: "code" },
+          { t: "  this.x;  // ✅ grabs this from outer fn", c: "code" },
+          { t: "}, 100);",                 c: "code" }
+        ]
+      },
+      {
+        q: "bind() vs call() vs apply()",
+        a: [
+          { t: "bind()   → returns a NEW fn, this is LOCKED forever", c: "code" },
+          { t: "call()   → calls IMMEDIATELY, args one by one",       c: "code" },
+          { t: "apply()  → calls IMMEDIATELY, args as ARRAY",         c: "code" },
+          { t: "ES6 spread made apply() mostly unnecessary.", c: "" },
+          { t: "fn.call(ctx, ...args) === fn.apply(ctx, args)", c: "code" }
+        ]
+      },
+      {
+        q: "Can you re-bind a bound function?",
+        a: [
+          { t: "NO.", c: "" },
+          { t: "const b1 = fn.bind({ name: 'A' });", c: "code" },
+          { t: "const b2 = b1.bind({ name: 'B' });", c: "code" },
+          { t: "b2();  // still 'A'",                 c: "code" },
+          { t: "Once locked by bind, it's locked forever. Only new can override.", c: "highlight" }
+        ]
+      },
+      {
+        q: "new vs bind — who wins?",
+        a: [
+          { t: "new ALWAYS wins." },
+          { t: "const Bound = Person.bind({ name: 'Forced' });", c: "code" },
+          { t: "const p = new Bound('Venky');",                  c: "code" },
+          { t: "p.name  // 'Venky' — new created fresh object",  c: "code" },
+          { t: "Priority: new > bind > call/apply > method > bare", c: "highlight" }
+        ]
+      },
+      {
+        q: "Arrow fn in object literal — the trap",
+        a: [
+          { t: "const obj = {",                        c: "code" },
+          { t: "  name: 'Venky',",                     c: "code" },
+          { t: "  greet: () => this.name  // ❌ undefined", c: "code" },
+          { t: "};",                                   c: "code" },
+          { t: "obj is NOT a scope. Arrow skips it, grabs this from global.", c: "highlight" },
+          { t: "Fix: use method shorthand → greet() { return this.name; }", c: "highlight" }
+        ]
+      }
+    ]
+  },
+  {
+    id: "scope",
+    label: "🔍 Scope & Closures",
+    color: "#3a7bd5",
+    cards: [
+      {
+        q: "What is scope?",
+        a: [
+          { t: "The zone where a variable can be accessed." },
+          { t: "Block scope  → let, const  (inside { } only)", c: "code" },
+          { t: "Function scope → var  (hoisted to nearest function)", c: "code" }
+        ]
+      },
+      {
+        q: "var vs let vs const — scope",
+        a: [
+          { t: "var   → function scoped. Leaks out of blocks.", c: "code" },
+          { t: "let   → block scoped. Stays inside { }.",       c: "code" },
+          { t: "const → block scoped + can't reassign.",        c: "code" },
+          { t: "", c: "spacer" },
+          { t: "if (true) {",           c: "code" },
+          { t: "  var x = 1;   // leaks out", c: "code" },
+          { t: "  let y = 2;   // stays inside", c: "code" },
+          { t: "}",                     c: "code" },
+          { t: "console.log(x); // 1", c: "code" },
+          { t: "console.log(y); // ReferenceError", c: "code" }
+        ]
+      },
+      {
+        q: "What is the scope chain?",
+        a: [
+          { t: "When JS looks up a variable, it starts at current scope, then walks UP through parent scopes until it finds it or hits global." },
+          { t: "Inner functions can see outer variables.", c: "yes" },
+          { t: "Outer functions CANNOT see inner variables.", c: "no" }
+        ]
+      },
+      {
+        q: "What is a closure?",
+        a: [
+          { t: "A function that REMEMBERS variables from its outer scope — even after the outer function has finished running." },
+          { t: "", c: "spacer" },
+          { t: "function makeCounter() {",  c: "code" },
+          { t: "  let count = 0;",          c: "code" },
+          { t: "  return () => ++count;",   c: "code" },
+          { t: "}",                         c: "code" },
+          { t: "const c = makeCounter();  // done running", c: "code" },
+          { t: "c();  // 1 — count still alive!", c: "code" }
+        ]
+      },
+      {
+        q: "The classic closure bug (var in for loop)",
+        a: [
+          { t: "for (var i = 0; i < 3; i++) {",         c: "code" },
+          { t: "  setTimeout(() => console.log(i), 100);", c: "code" },
+          { t: "}",                                      c: "code" },
+          { t: "// Logs: 3, 3, 3 — NOT 0, 1, 2",       c: "code" },
+          { t: "Why? var i is shared across ALL iterations. By the time setTimeout fires, i = 3.", c: "highlight" },
+          { t: "Fix: use let → for (let i = 0; ...) → logs 0, 1, 2", c: "highlight" }
+        ]
+      },
+      {
+        q: "Does this get captured by closures?",
+        a: [
+          { t: "NO." },
+          { t: "this is NOT a variable. It's decided fresh every time a function is called." },
+          { t: "Closures capture VARIABLES (let, const, var).", c: "yes" },
+          { t: "this is decided by CALL-SITE rules — not closure.", c: "no" }
+        ]
+      }
+    ]
+  },
+  {
+    id: "hoisting",
+    label: "🏗️ Hoisting",
+    color: "#f39c12",
+    cards: [
+      {
+        q: "What is hoisting?",
+        a: [
+          { t: "Before running code, JS scans and moves DECLARATIONS to the top of their scope." },
+          { t: "var       → declaration hoisted, value is NOT",            c: "code" },
+          { t: "let/const → hoisted but NOT initialized (TDZ)",            c: "code" },
+          { t: "fn declaration → FULLY hoisted (name + body)",             c: "code" },
+          { t: "fn expression  → only the var is hoisted",                 c: "code" }
+        ]
+      },
+      {
+        q: "var hoisting — what happens?",
+        a: [
+          { t: "console.log(x);  // undefined — not an error!", c: "code" },
+          { t: "var x = 5;",                                    c: "code" },
+          { t: "", c: "spacer" },
+          { t: "JS actually sees it as:", c: "" },
+          { t: "var x;            // hoisted to top", c: "code" },
+          { t: "console.log(x);  // undefined",       c: "code" },
+          { t: "x = 5;           // assignment stays here", c: "code" }
+        ]
+      },
+      {
+        q: "let / const — what is TDZ?",
+        a: [
+          { t: "console.log(y);  // ReferenceError!", c: "code" },
+          { t: "let y = 10;",                         c: "code" },
+          { t: "TDZ = Temporal Dead Zone", c: "highlight" },
+          { t: "The gap between scope start and the declaration. Accessing the variable in this zone = crash." }
+        ]
+      },
+      {
+        q: "Function declaration vs expression hoisting",
+        a: [
+          { t: "// Declaration → FULLY hoisted",                  c: "code" },
+          { t: "console.log(add(1,2));  // 3 ✅",                 c: "code" },
+          { t: "function add(a,b) { return a + b; }",             c: "code" },
+          { t: "", c: "spacer" },
+          { t: "// Expression → only var hoisted",                c: "code" },
+          { t: "console.log(mul(1,2));  // TypeError ❌",         c: "code" },
+          { t: "var mul = function(a,b) { return a * b; };",      c: "code" }
+        ]
+      },
+      {
+        q: "Declaration vs Expression — priority fight",
+        a: [
+          { t: "console.log(foo());  // 'declaration'",                    c: "code" },
+          { t: "function foo() { return 'declaration'; }",                c: "code" },
+          { t: "var foo = function() { return 'expression'; };",          c: "code" },
+          { t: "Why? Function declarations hoist FIRST and FULLY. The var foo already exists so it doesn't overwrite. The expression assignment hasn't run yet.", c: "highlight" }
+        ]
+      }
+    ]
+  }
+];
+
+// ─── STATE ────────────────────────────────────────────────────
+let activeTopic = "this";
+let flippedCards = {};   // key: "topicId-cardIndex" → true/false
+
+// ─── RENDER ───────────────────────────────────────────────────
+function render() {
+  renderTabs();
+  renderCards();
+}
+
+function renderTabs() {
+  const container = document.getElementById("tabs");
+  container.innerHTML = topics.map(t => {
+    const isActive = t.id === activeTopic;
+    return `
+      <button class="tab ${isActive ? "active" : ""}"
+        style="--tab-color:${t.color}; --tab-color-border:${t.color}55; --tab-color-bg:${t.color}18;"
+        onclick="switchTopic('${t.id}')">
+        ${t.label}<span class="count">${t.cards.length}</span>
+      </button>`;
+  }).join("");
+}
+
+function renderCards() {
+  const topic   = topics.find(t => t.id === activeTopic);
+  const query   = document.getElementById("search").value.toLowerCase();
+  const cards   = topic.cards.filter(c =>
+    c.q.toLowerCase().includes(query) ||
+    c.a.some(line => line.t.toLowerCase().includes(query))
+  );
+  const container = document.getElementById("cards");
+
+  if (cards.length === 0) {
+    container.innerHTML = '<div class="no-results">No cards match that search.</div>';
+    return;
+  }
+
+  container.innerHTML = cards.map((card, i) => {
+    // find original index in topic for flip state
+    const origIdx = topic.cards.indexOf(card);
+    const key     = activeTopic + "-" + origIdx;
+    const flipped = !!flippedCards[key];
+
+    const answerHtml = card.a.map(line => {
+      if (line.c === "spacer") return '<div class="line spacer"></div>';
+      const cls = line.c === "code" ? "code" : line.c === "highlight" ? "highlight" : line.c === "yes" ? "yes" : line.c === "no" ? "no" : "";
+      return `<div class="line ${cls}">${escapeHtml(line.t)}</div>`;
+    }).join("");
+
+    return `
+      <div class="card ${flipped ? "flipped" : ""}"
+        style="--card-color:${topic.color}; --card-border:${topic.color}33; --card-border-light:${topic.color}22; --card-front-bg:${topic.color}0a;"
+        onclick="flipCard('${key}')">
+        <div class="card-front">
+          <span class="question">${escapeHtml(card.q)}</span>
+          <span class="toggle-hint">${flipped ? "▲ tap to hide" : "▼ tap to reveal"}</span>
+        </div>
+        <div class="card-back">${answerHtml}</div>
+      </div>`;
+  }).join("");
+}
+
+// ─── ACTIONS ──────────────────────────────────────────────────
+function switchTopic(id) {
+  activeTopic = id;
+  document.getElementById("search").value = "";
+  render();
+}
+
+function flipCard(key) {
+  flippedCards[key] = !flippedCards[key];
+  render();
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ─── INIT ─────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
