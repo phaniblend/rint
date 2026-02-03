@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Deep-Dive Flashcards</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4efe9 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .navbar {
+            width: 100%;
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-controls select,
+        .nav-controls input {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        main {
+            max-width: 800px;
+            width: 100%;
+            padding: 0 1rem;
+            box-sizing: border-box;
+        }
+
+        .flashcard-container {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .flashcard {
+            width: 100%;
+            height: 300px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            background: #fff;
+            margin-bottom: 1.5rem;
+        }
+
+        .flashcard-front,
+        .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            border-radius: 10px;
+        }
+
+        .flashcard-front {
+            background: #fff;
+            color: #333;
+        }
+
+        .flashcard-back {
+            background: #f0f8ff;
+            color: #333;
+            transform: rotateY(180deg);
+        }
+
+        .context {
+            font-style: italic;
+            color: #666;
+            margin-top: 1rem;
+        }
+
+        .flashcard-buttons {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .flashcard-buttons button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            background: #007BFF;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .flashcard-buttons button:hover {
+            background: #0056b3;
+        }
+
+        .flip {
+            transform: rotateY(180deg);
+        }
+
+        @media (max-width: 600px) {
+            .flashcard {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1>JS Deep-Dive Flashcards</h1>
+            <div class="nav-controls">
+                <select id="category-select">
+                    <option value="all">All Categories</option>
+                    <option value="this">this Keyword</option>
+                    <option value="arrow">Arrow Functions</option>
+                    <option value="binding">Binding</option>
+                    <option value="call-stack">Call Stack</option>
+                    <option value="heap-memory">Heap & Memory</option>
+                    <option value="execution-context">Execution Context</option>
+                    <option value="scope-hoisting">Scope & Hoisting</option>
+                    <option value="prototypes">Prototypes & Inheritance</option>
+                </select>
+                <input type="text" id="search-input" placeholder="Search by keyword or #...">
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="flashcard-container">
+            <div class="flashcard" id="flashcard">
+                <div class="flashcard-front" id="flashcard-front">
+                    <h2 id="question-text">Question will appear here.</h2>
+                    <p id="question-context" class="context"></p>
+                </div>
+                <div class="flashcard-back" id="flashcard-back">
+                    <h2>Answer</h2>
+                    <p id="answer-text"></p>
+                </div>
+            </div>
+            <div class="flashcard-buttons">
+                <button id="prev-btn">Previous</button>
+                <button id="flip-btn">Flip</button>
+                <button id="next-btn">Next</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Flashcard data (sample: first 5 questions)
+        const flashcards = [
+            {
+                id: 173,
+                category: "this",
+                question: "What is `this` in the global scope in a browser?",
+                context: "In a browser script (non-module), what does `console.log(this);` output?",
+                answer: "`window` — in a browser's global scope, `this` refers to the `window` object."
+            },
+            {
+                id: 174,
+                category: "this",
+                question: "What does `this` resolve to inside a regular (non-arrow) function called without any context, in strict mode?",
+                context: "Consider: `\"use strict\"; function whoAmI() { return this; } console.log(whoAmI());`",
+                answer: "`undefined` — strict mode does not default `this` to the global object."
+            },
+            {
+                id: 184,
+                category: "arrow",
+                question: "What happens if you try to access `arguments` in an arrow function?",
+                context: "Example: `const fn = () => console.log(arguments); fn(1, 2, 3);`",
+                answer: "Throws a ReferenceError — arrow functions do not have their own `arguments` object."
+            },
+            {
+                id: 195,
+                category: "call-stack",
+                question: "What happens when you have infinite recursion in JavaScript?",
+                context: "Example: `function infinite() { return infinite(); } infinite();`",
+                answer: "A `RangeError: Maximum call stack size exceeded` is thrown."
+            },
+            {
+                id: 201,
+                category: "heap-memory",
+                question: "Where is this data stored — stack or heap?",
+                context: "Example: `const x = 42; const obj = { name: \"Venky\" }; const arr = [1, 2, 3];`",
+                answer: "`x` on stack; `obj` and `arr` on heap — primitives are stored on the stack, objects/arrays on the heap."
+            },
+            // Add all your questions here in the same format
+            {
+                id: 175,
+                category: "this",
+                question: "What does `this` resolve to inside the same function in non-strict (sloppy) mode?",
+                context: "Example: `function whoAmI() { return this; } console.log(whoAmI());`",
+                answer: "`window` (browser) / `global` (Node) — in sloppy mode, a bare function call defaults `this` to the global object."
+            },
+            {
+                id: 176,
+                category: "this",
+                question: "What is `this` inside the nested `inner` function?",
+                context: "Example: `const obj = { name: \"Venky\", outer() { function inner() { return this; } return inner(); } }; console.log(obj.outer());`",
+                answer: "`undefined` in strict mode, `window` in sloppy mode — `inner()` is called as a bare function, not as a method. It loses `obj`'s context."
+            },
+            {
+                id: 177,
+                category: "this",
+                question: "How can you fix the nested function in Q176 so `inner` correctly reads `this.name`?",
+                context: "Example: `const obj = { name: \"Venky\", outer() { const inner = () => this.name; return inner(); } };`",
+                answer: "Both Option A (arrow function) and Option B (`self` pattern) work — arrow captures lexical `this`; `self` manually preserves it."
+            },
+            {
+                id: 178,
+                category: "this",
+                question: "What does `this` refer to inside a `.then()` callback?",
+                context: "Example: `const obj = { name: \"Venky\", fetch() { return Promise.resolve().then(function() { return this; }); } }; obj.fetch().then(val => console.log(val));`",
+                answer: "`undefined` in strict mode, `window` in sloppy mode — `.then()` callbacks are called as bare functions, not methods."
+            },
+            {
+                id: 179,
+                category: "this",
+                question: "You destructure a method off an object. What happens to `this`?",
+                context: "Example: `const obj = { name: \"Venky\", greet() { return `Hi ${this.name}`; } }; const { greet } = obj; console.log(greet());`",
+                answer: "`\"Hi undefined\"` — `greet` is now a bare function reference. Calling it without `obj.` loses the context, so `this.name` is `undefined`."
+            },
+            {
+                id: 180,
+                category: "this",
+                question: "What is the `this` priority order when multiple binding mechanisms compete?",
+                context: "Rank from highest to lowest.",
+                answer: "`new` > `.bind()` > `.call()/.apply()` > implicit (method call) > global/default."
+            },
+            {
+                id: 181,
+                category: "this",
+                question: "`new` keyword vs `.bind()` — which wins?",
+                context: "Example: `function Person(name) { this.name = name; } const BoundPerson = Person.bind({ name: \"forcedName\" }); const p = new BoundPerson(\"ActualName\"); console.log(p.name);`",
+                answer: "`\"ActualName\"` — `new` overrides `.bind()`. When used with `new`, `this` is always the freshly created object."
+            },
+            {
+                id: 182,
+                category: "this",
+                question: "What is `this` inside a getter?",
+                context: "Example: `const obj = { _name: \"Venky\", get name() { return this._name; } }; console.log(obj.name);`",
+                answer: "`obj` — getters are called as methods on the object, so `this` refers to the object they belong to."
+            },
+            {
+                id: 183,
+                category: "this",
+                question: "What is `this` inside a `setTimeout` callback in a class method?",
+                context: "Example: `class Timer { constructor() { this.seconds = 0; } start() { setTimeout(function() { this.seconds++; }, 1000); } } new Timer().start();`",
+                answer: "`undefined` in strict mode, `window` in sloppy mode — `setTimeout` calls its callback as a bare function."
+            },
+            {
+                id: 185,
+                category: "arrow",
+                question: "Can an arrow function be used as a constructor?",
+                context: "Example: `const Person = (name) => { this.name = name; }; const p = new Person(\"Venky\");`",
+                answer: "No — arrow functions cannot be used with `new`. They throw a TypeError: \"Person is not a constructor\"."
+            },
+            {
+                id: 186,
+                category: "arrow",
+                question: "What is the output of an arrow function inside an object literal?",
+                context: "Example: `const obj = { name: \"Venky\", greet: () => `Hi ${this.name}` }; console.log(obj.greet());`",
+                answer: "`\"Hi undefined\"` — the arrow function captures `this` from its surrounding lexical scope (the global/module scope), NOT from `obj`."
+            },
+            {
+                id: 187,
+                category: "arrow",
+                question: "Arrow function inside a class field vs a method: what is the output?",
+                context: "Example: `class Dog { name = \"Rex\"; barkArrow = () => this.name; barkMethod() { return this.name; } } const dog = new Dog(); const { barkArrow, barkMethod } = dog; console.log(barkArrow()); console.log(barkMethod());`",
+                answer: "`barkArrow` logs `\"Rex\"`, `barkMethod` logs `undefined` — class field arrows bind `this` to the instance at creation. Destructuring the method loses context."
+            },
+            {
+                id: 188,
+                category: "arrow",
+                question: "What's the gotcha with arrow functions returning an object literal?",
+                context: "Example: `const makeUser = (name) => { name: name, age: 25 }; console.log(makeUser(\"Venky\"));`",
+                answer: "`undefined` — the `{ }` is interpreted as a block, not an object literal. The fix is to wrap in parentheses: `=> ({ name, age: 25 })`."
+            },
+            {
+                id: 189,
+                category: "arrow",
+                question: "Do arrow functions have a `.prototype` property?",
+                context: "Example: `const Fn = () => {}; console.log(Fn.prototype);`",
+                answer: "`undefined` — arrow functions have no `.prototype` because they can't be constructors."
+            },
+            {
+                id: 190,
+                category: "arrow",
+                question: "How do you fix an arrow function inside `.map()` to preserve `this`?",
+                context: "Example: `class UserList { constructor(users) { this.users = users; } getNames() { return this.users.map(function(u) { return u + \" from \" + this.company; }); } } new UserList([\"A\",\"B\"]).getNames();`",
+                answer: "`this.company` is `undefined` inside the `.map()` callback because it's a regular function. Fix: use an arrow function `(u) => u + \" from \" + this.company`."
+            },
+            {
+                id: 191,
+                category: "binding",
+                question: "You `.bind()` a function twice. Which binding wins?",
+                context: "Example: `function greet() { return this.name; } const bound1 = greet.bind({ name: \"First\" }); const bound2 = bound1.bind({ name: \"Second\" }); console.log(bound2());`",
+                answer: "`\"First\"` — once a function is hard-bound with `.bind()`, subsequent `.bind()` calls cannot override `this`."
+            },
+            {
+                id: 192,
+                category: "binding",
+                question: "`.bind()` vs `.call()` — when do you use which?",
+                context: "What is the difference?",
+                answer: "`.bind()` returns a new function for later invocation; `.call()` invokes immediately."
+            },
+            {
+                id: 193,
+                category: "binding",
+                question: "What is partial application with `.bind()`?",
+                context: "Example: `function add(a, b, c) { return a + b + c; } const add5and10 = add.bind(null, 5, 10); console.log(add5and10(20));`",
+                answer: "`35` — `bind(null, 5, 10)` fixes `a=5`, `b=10`. Calling `add5and10(20)` fills `c=20`. Result: `5+10+20 = 35`."
+            },
+            {
+                id: 194,
+                category: "binding",
+                question: "`.call()` with spread vs `.apply()` — are they equivalent now?",
+                context: "Example: `const args = [1, 2, 3]; fn.call(ctx, ...args); fn.apply(ctx, args);`",
+                answer: "Yes, they are equivalent in modern JS — ES6 spread makes `.apply()` largely unnecessary, but both achieve the same result."
+            },
+            {
+                id: 196,
+                category: "call-stack",
+                question: "Which of these will NOT cause a stack overflow even with deep recursion?",
+                context: "Example: `function sumA(n) { if (n === 0) return 0; return n + sumA(n - 1); } function sumB(n, acc = 0) { if (n === 0) return acc; return sumB(n - 1, acc + n); }`",
+                answer: "Option B — in engines that support Tail Call Optimization (TCO), the tail-recursive form reuses the same stack frame."
+            },
+            {
+                id: 197,
+                category: "call-stack",
+                question: "What happens to the call stack when you `await` a promise?",
+                context: "Example: `async function A() { console.log(\"before\"); await somePromise; console.log(\"after\"); }`",
+                answer: "`A` is removed from the call stack at the `await` point — execution is suspended and the stack unwinds. When the promise resolves, `A` resumes as a microtask."
+            },
+            {
+                id: 198,
+                category: "call-stack",
+                question: "Why can't you 'yield' back to the browser mid-loop in a long synchronous loop?",
+                context: "Example: `for (let i = 0; i < 1000000; i++) { heavyComputation(i); }`",
+                answer: "The call stack is occupied by the loop. The event loop cannot process any other tasks (paint, input, timers) until the synchronous call stack is completely empty."
+            },
+            {
+                id: 199,
+                category: "call-stack",
+                question: "How do you fix the blocking loop in Q199 to keep the UI responsive?",
+                context: "Example: `for (let i = 0; i < 1000000; i++) { heavyComputation(i); }`",
+                answer: "Use a `Web Worker`, break the loop into chunks using `setTimeout(chunk, 0)`, or use `requestIdleCallback`."
+            },
+            {
+                id: 202,
+                category: "heap-memory",
+                question: "What does this demonstrate about reference vs value types?",
+                context: "Example: `const a = { val: 1 }; const b = a; b.val = 999; console.log(a.val);`",
+                answer: "`999` — `b` and `a` point to the same object on the heap. Mutating through `b` is visible through `a`."
+            },
+            {
+                id: 203,
+                category: "heap-memory",
+                question: "An object has a circular reference. Are `a` and `b` garbage collected after the function returns?",
+                context: "Example: `function createCycle() { const a = {}; const b = { ref: a }; a.ref = b; } createCycle();`",
+                answer: "Yes — mark-and-sweep traces reachability from root objects. Once `createCycle` returns, neither `a` nor `b` is reachable."
+            },
+            {
+                id: 204,
+                category: "heap-memory",
+                question: "What is a `WeakMap` and why does it matter for memory?",
+                context: "Example: `const cache = new WeakMap(); let obj = { id: 1 }; cache.set(obj, \"cached data\"); obj = null;`",
+                answer: "The cache entry is eligible for garbage collection once `obj` has no other references — `WeakMap` holds weak references to keys."
+            },
+            {
+                id: 205,
+                category: "heap-memory",
+                question: "When would you use `WeakRef`?",
+                context: "Example: `let heavy = { data: new Array(1000000) }; const ref = new WeakRef(heavy); heavy = null; console.log(ref.deref());`",
+                answer: "May return the object or `undefined` — `WeakRef` does not prevent garbage collection."
+            },
+            {
+                id: 206,
+                category: "heap-memory",
+                question: "What breaks V8's hidden class optimization?",
+                context: "Example: `function createUser(name, age) { const user = { name }; if (age) user.age = age; return user; }`",
+                answer: "Option B — dynamically adding/removing properties creates multiple hidden classes, slowing property access."
+            },
+            {
+                id: 207,
+                category: "execution-context",
+                question: "How many execution contexts exist when this runs?",
+                context: "Example: `function outer() { function inner() { console.log(\"hello\"); } inner(); } outer();`",
+                answer: "3 — Global EC → `outer` EC → `inner` EC."
+            },
+            {
+                id: 208,
+                category: "execution-context",
+                question: "What is the difference between the Variable Environment and the Lexical Environment inside an execution context?",
+                context: "What is the difference?",
+                answer: "Variable Environment stores `var` declarations and function declarations; Lexical Environment extends it by also handling `let`, `const`, and block scoping."
+            },
+            {
+                id: 209,
+                category: "execution-context",
+                question: "What is a closure, in terms of execution context?",
+                context: "Example: `function makeCounter() { let count = 0; return () => ++count; } const counter = makeCounter();`",
+                answer: "The returned arrow function retains a reference to `makeCounter`'s execution context (its Lexical Environment) even after `makeCounter` has returned."
+            },
+            {
+                id: 210,
+                category: "execution-context",
+                question: "Why does this work with an IIFE?",
+                context: "Example: `(function() { var secret = \"hidden\"; })(); console.log(secret);`",
+                answer: "`ReferenceError: secret is not defined` — the IIFE creates its own execution context with its own Variable Environment."
+            },
+            {
+                id: 211,
+                category: "execution-context",
+                question: "Block scope vs function scope — what is the output?",
+                context: "Example: `{ var x = 10; let y = 20; } console.log(x); console.log(y);`",
+                answer: "`10, ReferenceError` — `var` is function-scoped (or global if not inside a function), so it leaks out of the block. `let` is block-scoped."
+            },
+            {
+                id: 212,
+                category: "scope-hoisting",
+                question: "What is the output?",
+                context: "Example: `console.log(a); var a = 5; console.log(a);`",
+                answer: "`undefined, 5` — `var a` is hoisted to the top of the scope (declaration only)."
+            },
+            {
+                id: 213,
+                category: "scope-hoisting",
+                question: "What is the output?",
+                context: "Example: `console.log(b); let b = 10;`",
+                answer: "`ReferenceError: Cannot access 'b' before initialization` — `let` is hoisted but NOT initialized."
+            },
+            {
+                id: 214,
+                category: "scope-hoisting",
+                question: "Function declaration vs function expression hoisting: what is the output?",
+                context: "Example: `console.log(declaredFn()); console.log(expressionFn()); function declaredFn() { return \"declared\"; } var expressionFn = function() { return \"expression\"; };`",
+                answer: "`\"declared\"`, then `TypeError: expressionFn is not a function` — function declarations are fully hoisted."
+            },
+            {
+                id: 215,
+                category: "scope-hoisting",
+                question: "Shadowing — what is the output?",
+                context: "Example: `let x = \"global\"; function test() { let x = \"local\"; console.log(x); } test(); console.log(x);`",
+                answer: "`\"local\", \"global\"` — the inner `let x` shadows the outer one inside `test`."
+            },
+            {
+                id: 216,
+                category: "scope-hoisting",
+                question: "What is the output?",
+                context: "Example: `var x = 1; function test() { console.log(x); var x = 2; console.log(x); } test();`",
+                answer: "`undefined, 2` — `var x` inside `test` is hoisted to the top of the function."
+            },
+            {
+                id: 217,
+                category: "scope-hoisting",
+                question: "What is the output?",
+                context: "Example: `console.log(foo()); function foo() { return \"function declaration\"; } var foo = function() { return \"function expression\"; };`",
+                answer: "`\"function declaration\"` — the function declaration is fully hoisted first."
+            },
+            {
+                id: 218,
+                category: "prototypes",
+                question: "What is the difference between `__proto__` and `.prototype`?",
+                context: "What is the difference?",
+                answer: "`.prototype` is a property on constructor functions; `__proto__` is the actual prototype link on every object, pointing up the chain."
+            },
+            {
+                id: 219,
+                category: "prototypes",
+                question: "What is the output?",
+                context: "Example: `function Animal(name) { this.name = name; } Animal.prototype.speak = function() { return this.name + \" speaks\"; }; const dog = new Animal(\"Rex\"); console.log(dog.hasOwnProperty(\"name\")); console.log(dog.hasOwnProperty(\"speak\"));`",
+                answer: "`true, false` — `name` is set directly on the instance via `this.name`. `speak` lives on `Animal.prototype`."
+            },
+            {
+                id: 220,
+                category: "prototypes",
+                question: "`instanceof` gotcha — what is the output?",
+                context: "Example: `console.log([] instanceof Array); console.log([] instanceof Object);`",
+                answer: "`true, true` — arrays are instances of `Array`, but `Array.prototype` inherits from `Object.prototype`."
+            },
+            {
+                id: 221,
+                category: "prototypes",
+                question: "What does `new` actually do under the hood?",
+                context: "Put these steps in order: 1. Creates a new empty object 2. Sets the object's `__proto__` to the constructor's `.prototype` 3. Calls the constructor with `this` set to the new object 4. Returns the new object (unless the constructor explicitly returns an object)",
+                answer: "1, 2, 3, 4."
+            },
+            {
+                id: 222,
+                category: "prototypes",
+                question: "What happens if a constructor explicitly returns an object?",
+                context: "Example: `function Weird() { this.a = 1; return { b: 2 }; } const w = new Weird(); console.log(w.a); console.log(w.b);`",
+                answer: "`undefined, 2` — when a constructor returns an explicit object, `new` returns THAT object instead of `this`."
+            },
+            {
+                id: 223,
+                category: "prototypes",
+                question: "`Object.create` vs constructor functions: what is the output?",
+                context: "Example: `const proto = { greet() { return \"Hi \" + this.name; } }; const obj = Object.create(proto); obj.name = \"Venky\"; console.log(obj.greet()); console.log(obj.hasOwnProperty(\"greet\"));`",
+                answer: "`\"Hi Venky\", false` — `Object.create(proto)` sets `proto` as `obj`'s prototype. `greet` is inherited (not own)."
+            }
+        ];
+
+        // App state
+        let currentIndex = 0;
+        let filteredCards = [...flashcards];
+
+        // DOM elements
+        const flashcard = document.getElementById("flashcard");
+        const questionText = document.getElementById("question-text");
+        const questionContext = document.getElementById("question-context");
+        const answerText = document.getElementById("answer-text");
+        const flipBtn = document.getElementById("flip-btn");
+        const prevBtn = document.getElementById("prev-btn");
+        const nextBtn = document.getElementById("next-btn");
+        const categorySelect = document.getElementById("category-select");
+        const searchInput = document.getElementById("search-input");
+
+        // Render current flashcard
+        function renderFlashcard() {
+            if (filteredCards.length === 0) {
+                questionText.textContent = "No matching flashcards found.";
+                questionContext.textContent = "";
+                answerText.textContent = "";
+                return;
+            }
+            const card = filteredCards[currentIndex];
+            questionText.textContent = card.question;
+            questionContext.textContent = card.context;
+            answerText.textContent = card.answer;
+            flashcard.classList.remove("flip");
+        }
+
+        // Filter flashcards by category or search term
+        function filterFlashcards() {
+            const category = categorySelect.value;
+            const searchTerm = searchInput.value.toLowerCase();
+
+            filteredCards = flashcards.filter(card => {
+                const matchesCategory = category === "all" || card.category === category;
+                const matchesSearch =
+                    card.question.toLowerCase().includes(searchTerm) ||
+                    card.context.toLowerCase().includes(searchTerm) ||
+                    card.answer.toLowerCase().includes(searchTerm) ||
+                    card.id.toString().includes(searchTerm);
+                return matchesCategory && matchesSearch;
+            });
+
+            currentIndex = 0;
+            renderFlashcard();
+        }
+
+        // Event listeners
+        flipBtn.addEventListener("click", () => {
+            flashcard.classList.toggle("flip");
+        });
+
+        prevBtn.addEventListener("click", () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                renderFlashcard();
+            }
+        });
+
+        nextBtn.addEventListener("click", () => {
+            if (currentIndex < filteredCards.length - 1) {
+                currentIndex++;
+                renderFlashcard();
+            }
+        });
+
+        categorySelect.addEventListener("change", filterFlashcards);
+        searchInput.addEventListener("input", filterFlashcards);
+
+        // Initialize
+        renderFlashcard();
+    </script>
+</body>
+</html>

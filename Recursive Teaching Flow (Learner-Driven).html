@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<!-- saved from url=(0045)file:///C:/Users/AbdurRahim/Desktop/flow.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <title>Recursive Teaching Flow (Learner-Driven)</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #fafafa;
+      margin: 0;
+      padding: 24px;
+    }
+    svg {
+      width: 100%;
+      max-width: 1200px;
+      display: block;
+      margin: auto;
+    }
+    .box {
+      fill: #ffffff;
+      stroke: #222;
+      stroke-width: 2;
+      rx: 12;
+      ry: 12;
+    }
+    .diamond {
+      fill: #ffffff;
+      stroke: #222;
+      stroke-width: 2;
+    }
+    .text {
+      font-size: 14px;
+      fill: #111;
+      text-anchor: middle;
+    }
+    .small {
+      font-size: 12px;
+      fill: #444;
+      text-anchor: middle;
+    }
+    .arrow {
+      stroke: #222;
+      stroke-width: 2.5;
+      fill: none;
+      marker-end: url(#arrow);
+    }
+  </style>
+</head>
+<body>
+
+<svg viewBox="0 0 1200 1550" role="img" aria-label="Learner-driven recursive teaching flow">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#222"></path>
+    </marker>
+  </defs>
+
+  <!-- MAIN FLOW (CENTER LANE) -->
+
+  <rect class="box" x="400" y="40" width="400" height="60"></rect>
+  <text class="text" x="600" y="75">Learner requests CONCEPT_X</text>
+
+  <path class="arrow" d="M600,100 L600,160"></path>
+
+  <rect class="box" x="360" y="160" width="480" height="70"></rect>
+  <text class="text" x="600" y="195">Resolve required dependencies for CONCEPT_X</text>
+  <text class="small" x="600" y="215">(system derives dependency graph)</text>
+
+  <path class="arrow" d="M600,230 L600,300"></path>
+
+  <!-- LEARNER AGENCY -->
+
+  <rect class="box" x="350" y="300" width="500" height="90"></rect>
+  <text class="text" x="600" y="335">Learner self-assesses dependency knowledge</text>
+  <text class="small" x="600" y="360">
+    Marks each dependency as: Known / Unsure / Teach me
+  </text>
+
+  <path class="arrow" d="M600,390 L600,460"></path>
+
+  <polygon class="diamond" points="600,460 740,540 600,620 460,540"></polygon>
+  <text class="text" x="600" y="535">Any dependency</text>
+  <text class="text" x="600" y="555">unsatisfied?</text>
+
+  <!-- YES → LEFT (PREREQUISITE RECURSION) -->
+
+  <path class="arrow" d="M460,540 L240,540 L240,610"></path>
+
+  <rect class="box" x="80" y="610" width="320" height="70"></rect>
+  <text class="text" x="240" y="645">Select deepest unsatisfied dependency</text>
+  <text class="text" x="240" y="665">(CONCEPT_Y)</text>
+
+  <path class="arrow" d="M240,680 L240,750"></path>
+
+  <rect class="box" x="60" y="750" width="360" height="70"></rect>
+  <text class="text" x="240" y="785">Push CONCEPT_X onto teaching stack</text>
+  <text class="small" x="240" y="805">(pause parent concept)</text>
+
+  <path class="arrow" d="M240,820 L240,900"></path>
+
+  <rect class="box" x="40" y="900" width="400" height="110"></rect>
+  <text class="text" x="240" y="935">Teach ONLY unmet dependency (CONCEPT_Y)</text>
+  <text class="small" x="240" y="960">
+    idea → example → mental model → micro-check
+  </text>
+
+  <path class="arrow" d="M240,1010 L240,1080"></path>
+
+  <polygon class="diamond" points="240,1080 350,1150 240,1220 130,1150"></polygon>
+  <text class="text" x="240" y="1145">Micro-check for</text>
+  <text class="text" x="240" y="1165">CONCEPT_Y passed?</text>
+
+  <!-- Y FAIL → LOOP -->
+
+  <path class="arrow" d="M130,1150 L60,1150 L60,960 L40,960"></path>
+
+  <!-- Y PASS → RETURN -->
+
+  <path class="arrow" d="M240,1220 L240,1280"></path>
+
+  <rect class="box" x="80" y="1280" width="320" height="60"></rect>
+  <text class="text" x="240" y="1315">Mark CONCEPT_Y as satisfied</text>
+
+  <path class="arrow" d="M240,1340 L240,1405"></path>
+
+  <rect class="box" x="60" y="1405" width="360" height="70"></rect>
+  <text class="text" x="240" y="1440">Pop stack &amp; resume parent concept</text>
+
+  <path class="arrow" d="M420,1440 L600,1440 L600,620"></path>
+
+  <!-- NO → CONTINUE MAIN -->
+
+  <path class="arrow" d="M600,620 L600,700"></path>
+
+  <rect class="box" x="400" y="700" width="400" height="60"></rect>
+  <text class="text" x="600" y="735">Teach CONCEPT_X</text>
+
+  <path class="arrow" d="M600,760 L600,830"></path>
+
+  <polygon class="diamond" points="600,830 740,900 600,970 460,900"></polygon>
+  <text class="text" x="600" y="895">Micro-check for</text>
+  <text class="text" x="600" y="915">CONCEPT_X passed?</text>
+
+  <!-- X FAIL → RIGHT -->
+
+  <path class="arrow" d="M740,900 L980,900 L980,720"></path>
+
+  <rect class="box" x="880" y="720" width="240" height="80"></rect>
+  <text class="text" x="1000" y="755">Diagnose missing dependency</text>
+  <text class="small" x="1000" y="775">Re-enter recursive resolution</text>
+
+  <path class="arrow" d="M980,720 L980,195 L840,195"></path>
+
+  <!-- X PASS → DONE -->
+
+  <path class="arrow" d="M600,970 L600,1040"></path>
+
+  <rect class="box" x="360" y="1040" width="480" height="80"></rect>
+  <text class="text" x="600" y="1075">Mark CONCEPT_X as mastered</text>
+  <text class="small" x="600" y="1098">Return control to parent flow</text>
+
+</svg>
+
+
+
+</body></html>

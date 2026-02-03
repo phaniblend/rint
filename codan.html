@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Codebase Analyzer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .upload-area {
+            border: 2px dashed #2ecc71;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .upload-area:hover {
+            background: #f0f8ff;
+        }
+        #file-input {
+            display: none;
+        }
+        button {
+            background: #2ecc71;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #27ae60;
+        }
+        #file-list {
+            margin: 20px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        #summary {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #fff;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .file-entry {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .file-entry:last-child {
+            border-bottom: none;
+        }
+        .file-name {
+            font-weight: bold;
+        }
+        .file-path {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        .file-type {
+            color: #e74c3c;
+            font-size: 12px;
+        }
+        .loading {
+            text-align: center;
+            font-style: italic;
+            color: #7f8c8d;
+        }
+        .hidden {
+            display: none;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-weight: bold;
+            color: #2c3e50;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .highlight {
+            background: #fffde7;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>GitHub Codebase Analyzer</h1>
+        <p>Upload a GitHub repository ZIP (without <code>node_modules</code>) to analyze its structure and generate a summary for AI agents.</p>
+
+        <div class="upload-area" id="upload-area">
+            <p>Drag & drop a GitHub ZIP here or click to browse</p>
+            <input type="file" id="file-input" accept=".zip">
+        </div>
+
+        <button id="analyze-btn" class="hidden">Analyze Codebase</button>
+
+        <div id="file-list" class="hidden">
+            <h3>Files in the codebase:</h3>
+            <div id="files"></div>
+        </div>
+
+        <div id="summary" class="hidden">
+            <h3>Codebase Summary:</h3>
+            <div id="summary-content"></div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const fileList = document.getElementById('file-list');
+        const filesContainer = document.getElementById('files');
+        const summaryContainer = document.getElementById('summary');
+        const summaryContent = document.getElementById('summary-content');
+
+        // State
+        let zipFile = null;
+        let fileEntries = [];
+
+        // Drag & drop and click-to-upload logic
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = '#f0f8ff';
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.background = '';
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = '';
+            if (e.dataTransfer.files.length) {
+                zipFile = e.dataTransfer.files[0];
+                handleFileUpload();
+            }
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                zipFile = e.target.files[0];
+                handleFileUpload();
+            }
+        });
+
+        // Handle file upload
+        function handleFileUpload() {
+            if (!zipFile.name.endsWith('.zip')) {
+                alert('Please upload a ZIP file.');
+                return;
+            }
+            analyzeBtn.classList.remove('hidden');
+        }
+
+        // Analyze the ZIP file
+        analyzeBtn.addEventListener('click', () => {
+            fileList.classList.remove('hidden');
+            summaryContainer.classList.add('hidden');
+            filesContainer.innerHTML = '<p class="loading">Extracting files... This may take a moment.</p>';
+
+            JSZip.loadAsync(zipFile)
+                .then((zip) => {
+                    fileEntries = [];
+                    const promises = [];
+
+                    // Iterate through all files in the ZIP
+                    zip.forEach((relativePath, zipEntry) => {
+                        // Skip node_modules and hidden files/folders
+                        if (zipEntry.dir || relativePath.includes('node_modules/') || relativePath.startsWith('.')) {
+                            return;
+                        }
+                        promises.push(
+                            zipEntry.async('text').then((content) => {
+                                fileEntries.push({
+                                    name: relativePath.split('/').pop(),
+                                    path: relativePath,
+                                    type: getFileType(relativePath),
+                                    content: content
+                                });
+                            }).catch(() => {})
+                        );
+                    });
+
+                    // Wait for all files to be read
+                    Promise.all(promises).then(() => {
+                        displayFiles();
+                        generateSummary();
+                    });
+                })
+                .catch((err) => {
+                    filesContainer.innerHTML = `<p class="loading">Error: ${err.message}</p>`;
+                });
+        });
+
+        // Display files in the UI
+        function displayFiles() {
+            filesContainer.innerHTML = '';
+            fileEntries.forEach((entry) => {
+                const fileElement = document.createElement('div');
+                fileElement.className = 'file-entry';
+                fileElement.innerHTML = `
+                    <div class="file-name">${entry.name}</div>
+                    <div class="file-path">${entry.path}</div>
+                    <div class="file-type">${entry.type}</div>
+                `;
+                filesContainer.appendChild(fileElement);
+            });
+        }
+
+        // Generate a summary for AI agents
+        function generateSummary() {
+            summaryContainer.classList.remove('hidden');
+            summaryContent.innerHTML = 'Generating summary...';
+
+            // Basic project info
+            let summary = '';
+            summary += '=== CODEBASE SUMMARY (NO node_modules) ===\n\n';
+
+            // 1. Project structure
+            summary += '1. PROJECT STRUCTURE\n';
+            const folders = new Set();
+            fileEntries.forEach((entry) => {
+                const folderPath = entry.path.split('/').slice(0, -1).join('/');
+                if (folderPath) folders.add(folderPath);
+            });
+            if (folders.size) {
+                summary += 'Folders:\n';
+                Array.from(folders).sort().forEach((folder) => {
+                    summary += `- ${folder}/\n`;
+                });
+            } else {
+                summary += 'No folders found (flat structure).\n';
+            }
+            summary += '\n';
+
+            // 2. Key files
+            summary += '2. KEY FILES\n';
+            const keyFiles = {
+                'package.json': 'Project metadata and dependencies',
+                'README.md': 'Project documentation',
+                'index.js': 'Main entry point (Node.js)',
+                'index.html': 'Main entry point (Web)',
+                'src/': 'Source code directory',
+                'public/': 'Public assets directory',
+                'config/': 'Configuration files',
+                'tests/': 'Test files',
+                'app.js': 'Main application file',
+                'main.js': 'Main application file',
+                'server.js': 'Server entry point',
+                'Dockerfile': 'Docker configuration',
+                '.gitignore': 'Git ignore rules'
+            };
+
+            Object.entries(keyFiles).forEach(([file, description]) => {
+                const found = fileEntries.some((entry) =>
+                    entry.path === file ||
+                    entry.path.startsWith(file)
+                );
+                summary += `- ${file}: ${found ? '<span class="highlight">Present</span>' : 'Not found'} (${description})\n`;
+            });
+            summary += '\n';
+
+            // 3. File types
+            summary += '3. FILE TYPES\n';
+            const typeCounts = {};
+            fileEntries.forEach((entry) => {
+                typeCounts[entry.type] = (typeCounts[entry.type] || 0) + 1;
+            });
+            if (Object.keys(typeCounts).length) {
+                Object.entries(typeCounts).sort().forEach(([type, count]) => {
+                    summary += `- ${type}: ${count} files\n`;
+                });
+            } else {
+                summary += 'No files found.\n';
+            }
+            summary += '\n';
+
+            // 4. Dependencies (if package.json exists)
+            summary += '4. DEPENDENCIES\n';
+            const packageJson = fileEntries.find((entry) => entry.name === 'package.json');
+            if (packageJson) {
+                try {
+                    const pkg = JSON.parse(packageJson.content);
+                    if (pkg.dependencies) {
+                        summary += 'Dependencies:\n';
+                        Object.entries(pkg.dependencies).forEach(([dep, version]) => {
+                            summary += `- ${dep}@${version}\n`;
+                        });
+                    }
+                    if (pkg.devDependencies) {
+                        summary += '\nDev Dependencies:\n';
+                        Object.entries(pkg.devDependencies).forEach(([dep, version]) => {
+                            summary += `- ${dep}@${version}\n`;
+                        });
+                    }
+                    if (pkg.scripts) {
+                        summary += '\nScripts:\n';
+                        Object.entries(pkg.scripts).forEach(([script, command]) => {
+                            summary += `- ${script}: ${command}\n`;
+                        });
+                    }
+                } catch (err) {
+                    summary += 'Could not parse package.json\n';
+                }
+            } else {
+                summary += 'No package.json found\n';
+            }
+            summary += '\n';
+
+            // 5. Entry points
+            summary += '5. ENTRY POINTS\n';
+            const entryPoints = fileEntries.filter((entry) =>
+                entry.name === 'index.js' ||
+                entry.name === 'index.html' ||
+                entry.name === 'main.js' ||
+                entry.name === 'app.js' ||
+                entry.name === 'server.js'
+            );
+            if (entryPoints.length) {
+                entryPoints.forEach((entry) => {
+                    summary += `- ${entry.path}\n`;
+                });
+            } else {
+                summary += 'No obvious entry points found\n';
+            }
+            summary += '\n';
+
+            // 6. Example file content (first few lines)
+            summary += '6. EXAMPLE FILE CONTENT\n';
+            if (fileEntries.length) {
+                const exampleFile = fileEntries.find((entry) =>
+                    entry.type === 'JavaScript' ||
+                    entry.type === 'HTML' ||
+                    entry.type === 'CSS' ||
+                    entry.type === 'JSON'
+                );
+                if (exampleFile) {
+                    const lines = exampleFile.content.split('\n').slice(0, 5);
+                    summary += `First 5 lines of ${exampleFile.path}:\n`;
+                    lines.forEach((line) => {
+                        summary += `  ${line}\n`;
+                    });
+                }
+            }
+            summary += '\n';
+
+            // 7. Suggested next steps for AI agents
+            summary += '7. SUGGESTED NEXT STEPS FOR AI AGENTS\n';
+            summary += '- Review the project structure and key files.\n';
+            summary += '- Check package.json for dependencies and scripts.\n';
+            summary += '- Look for TODO comments or open issues in the code.\n';
+            summary += '- Identify the main entry point and trace the execution flow.\n';
+            summary += '- Check for configuration files (e.g., webpack.config.js, .eslintrc, tsconfig.json).\n';
+            summary += '- Run the project locally if possible (check README.md for instructions).\n';
+            summary += '- Focus on the <span class="highlight">src/</span> directory for source code.\n';
+            summary += '- Ignore <span class="highlight">node_modules/</span> (not included in this ZIP).\n';
+
+            summaryContent.innerHTML = summary.replace(/<span class="highlight">(.*?)<\/span>/g, '<span class="highlight">$1</span>');
+        }
+
+        // Helper: Get file type from path
+        function getFileType(path) {
+            const extension = path.split('.').pop().toLowerCase();
+            const typeMap = {
+                'js': 'JavaScript',
+                'ts': 'TypeScript',
+                'jsx': 'JavaScript (JSX)',
+                'tsx': 'TypeScript (TSX)',
+                'html': 'HTML',
+                'css': 'CSS',
+                'scss': 'SCSS',
+                'json': 'JSON',
+                'md': 'Markdown',
+                'yaml': 'YAML',
+                'yml': 'YAML',
+                'txt': 'Text',
+                'jpg': 'Image',
+                'jpeg': 'Image',
+                'png': 'Image',
+                'gif': 'Image',
+                'svg': 'SVG',
+                'py': 'Python',
+                'java': 'Java',
+                'c': 'C',
+                'cpp': 'C++',
+                'rb': 'Ruby',
+                'php': 'PHP',
+                'go': 'Go',
+                'rs': 'Rust',
+                'sh': 'Shell Script',
+                'sql': 'SQL',
+                'dockerfile': 'Dockerfile'
+            };
+            return typeMap[extension] || 'Unknown';
+        }
+    </script>
+</body>
+</html>
