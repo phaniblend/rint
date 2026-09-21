@@ -4,103 +4,73 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Interview Prep — All Questions</title>
+<title>Interview Prep — All Questions</title>
 <style>
   :root{
     --bg:#0f1419; --panel:#161c24; --panel2:#1c232d; --border:#2a323d;
     --text:#e6edf3; --muted:#9aa7b5; --accent:#5fb3ff; --accent2:#7ee0b8;
     --tag-bg:#1e2937; --code:#ffcb6b; --core:#ffd479;
-    --shadow: 0 1px 3px rgba(0,0,0,.4);
   }
   *{box-sizing:border-box;}
+  html,body{ height:100%; }
   body{
     margin:0; background:var(--bg); color:var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
-    line-height:1.55;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif; line-height:1.55;
   }
-  header{
-    position:sticky; top:0; z-index:10;
-    background:linear-gradient(180deg, var(--bg) 80%, transparent);
-    padding:28px 24px 14px;
-    backdrop-filter: blur(6px);
-    border-bottom:1px solid var(--border);
-  }
-  h1{ margin:0 0 4px; font-size:1.5rem; letter-spacing:-0.01em; }
-  .subtitle{ color:var(--muted); font-size:.92rem; margin-bottom:16px; }
-  .controls{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-  #search{
-    flex:1 1 240px; min-width:200px; background:var(--panel2); border:1px solid var(--border);
-    color:var(--text); border-radius:8px; padding:9px 12px; font-size:.9rem; outline:none;
-  }
-  #search:focus{ border-color:var(--accent); }
-  .pill{
-    cursor:pointer; user-select:none; border:1px solid var(--border); background:var(--tag-bg);
-    color:var(--muted); border-radius:999px; padding:6px 13px; font-size:.8rem; white-space:nowrap;
-    transition: all .15s;
-  }
-  .pill:hover{ color:var(--text); border-color:var(--accent); }
-  .pill.active{ background:var(--accent); color:#08131f; border-color:var(--accent); font-weight:600; }
-  .stats{ color:var(--muted); font-size:.78rem; margin-top:10px; }
-  main{ max-width:900px; margin:0 auto; padding:20px 24px 80px; }
-  .cat-heading{
-    margin:38px 0 14px; padding-top:6px; font-size:1.05rem; color:var(--accent2);
-    border-top:1px solid var(--border); display:flex; align-items:center; gap:10px;
-  }
-  .cat-heading:first-of-type{ border-top:none; margin-top:8px; }
-  .cat-count{ font-size:.72rem; color:var(--muted); font-weight:400; background:var(--tag-bg); padding:2px 8px; border-radius:999px;}
-  .card{
-    background:var(--panel); border:1px solid var(--border); border-radius:10px;
-    margin-bottom:12px; overflow:hidden; box-shadow:var(--shadow);
-  }
-  .q{
-    padding:16px 18px; cursor:pointer; display:flex; gap:12px; align-items:flex-start;
-    transition: background .12s;
-  }
+  .app{ display:flex; flex-direction:column; height:100vh; height:100dvh; max-width:820px; margin:0 auto; }
+  .top{ padding:14px 16px 10px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .top-row{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .count{ color:var(--accent); font-weight:700; font-size:.9rem; white-space:nowrap; }
+  .cat{ color:var(--accent2); font-size:.8rem; text-align:right; }
+  .bar{ height:3px; background:var(--tag-bg); border-radius:2px; margin-top:10px; overflow:hidden; }
+  .bar i{ display:block; height:100%; background:var(--accent); transition:width .2s; }
+  main{ flex:1; overflow-y:auto; padding:16px; -webkit-overflow-scrolling:touch; }
+  .card{ background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .q{ padding:18px; cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
   .q:hover{ background:var(--panel2); }
-  .q-num{ color:var(--accent); font-weight:700; font-size:.85rem; flex-shrink:0; padding-top:1px; }
-  .q-text{ font-size:.95rem; font-weight:500; }
-  .q-text code{ background:#0b0f14; color:var(--code); padding:1px 5px; border-radius:4px; font-size:.85em; }
-  .chevron{ margin-left:auto; color:var(--muted); flex-shrink:0; transition: transform .15s; font-size:.8rem; }
-  .card.open .chevron{ transform: rotate(90deg); }
-  .a-wrap{ max-height:0; overflow:hidden; transition: max-height .25s ease; }
-  .card.open .a-wrap{ max-height:2600px; }
-  .a{
-    padding:0 18px 18px 42px; font-size:.9rem; color:#cfd8e3;
-  }
-  .a code{ background:#0b0f14; color:var(--code); padding:1px 5px; border-radius:4px; font-size:.85em; }
-  .core{
-    display:block; margin:0 0 10px; padding:10px 12px; background:#241d0e;
-    border-left:3px solid var(--core); border-radius:6px; color:#ffe9b3; font-size:.88rem;
-  }
+  .q-text{ font-size:1.02rem; font-weight:500; }
+  .hint{ margin-top:12px; font-size:.78rem; color:var(--muted); }
+  .a{ display:none; padding:16px 18px 20px; border-top:1px solid var(--border); font-size:.93rem; color:#cfd8e3; }
+  .card.open .a{ display:block; }
+  .card.open .hint{ display:none; }
+  code{ background:#0b0f14; color:var(--code); padding:1px 5px; border-radius:4px; font-size:.86em; overflow-wrap:anywhere; }
+  .q-ctx{ margin-top:10px; font-size:.84rem; font-weight:400; color:var(--muted); }
+  .core{ display:block; margin:0 0 10px; padding:10px 12px; background:#241d0e; border-left:3px solid var(--core); border-radius:6px; color:#ffe9b3; font-size:.9rem; }
   .core b{ color:var(--core); }
-  .hidden{ display:none !important; }
-  .empty{ text-align:center; color:var(--muted); padding:60px 0; font-size:.95rem; }
-  @media print{
-    header{ position:static; }
-    .a-wrap{ max-height:none !important; }
-    .chevron{ display:none; }
-    .controls{ display:none; }
-  }
-  .q-ctx{ margin-top:6px; font-size:.82rem; font-weight:400; color:var(--muted); }
   .ml{ margin:0 0 6px; }
   .ml.highlight{ color:#ffe9b3; background:#241d0e; border-left:3px solid var(--core); border-radius:6px; padding:6px 10px; }
   .ml.yes{ color:var(--accent2); } .ml.no{ color:#ff8a80; }
-  .a pre{ margin:8px 0; padding:10px 12px; background:#0b0f14; border:1px solid var(--border); border-radius:6px; overflow-x:auto; }
-  .a pre code{ background:none; padding:0; color:var(--code); font-size:.82rem; }
+  pre{ margin:8px 0; padding:10px 12px; background:#0b0f14; border:1px solid var(--border); border-radius:6px; overflow-x:auto; }
+  pre code{ background:none; padding:0; color:var(--code); font-size:.82rem; }
+  .nav{ display:flex; gap:12px; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); border-top:1px solid var(--border); background:var(--bg); flex-shrink:0; }
+  .nav button{
+    flex:1; padding:14px; font-size:1rem; font-weight:600; border-radius:10px; cursor:pointer;
+    border:1px solid var(--border); background:var(--tag-bg); color:var(--text);
+  }
+  .nav button.next{ background:var(--accent); color:#08131f; border-color:var(--accent); }
+  .nav button:disabled{ opacity:.35; cursor:default; }
 </style>
 </head>
 <body>
-
-<header>
-  <h1>🧠 Interview Prep — All Questions</h1>
-  <div class="subtitle">164 questions in one place: 87 senior React/TypeScript architecture questions, 50 JavaScript deep-dive flashcards, and 27 JS engine memory cards (this, scope &amp; closures, hoisting). Search across all of them or filter by category.</div>
-  <div class="controls">
-    <input id="search" type="text" placeholder="Search questions or answers…" />
-    <span class="pill active" data-cat="all">All</span>
+<div class="app">
+  <div class="top">
+    <div class="top-row"><span class="count" id="count"></span><span class="cat" id="cat"></span></div>
+    <div class="bar"><i id="prog"></i></div>
   </div>
-  <div class="stats" id="stats"></div>
-</header>
-
-<main id="main"></main>
+  <main id="main">
+    <div class="card" id="card">
+      <div class="q" id="q" role="button" tabindex="0" aria-expanded="false">
+        <div class="q-text" id="qtext"></div>
+        <div class="hint">Tap to show the answer</div>
+      </div>
+      <div class="a" id="a"></div>
+    </div>
+  </main>
+  <div class="nav">
+    <button id="prev">← Prev</button>
+    <button id="next" class="next">Next →</button>
+  </div>
+</div>
 
 <script>
 const DATA = [
@@ -926,84 +896,44 @@ const DATA = [
  }
 ];
 
-const cats = [...new Set(DATA.map(d => d.cat))];
-let activeCat = "all";
-let query = "";
+const KEY = "interview-prep-pos";
+let i = 0;
+try { const s = parseInt(localStorage.getItem(KEY), 10); if (s >= 0 && s < DATA.length) i = s; } catch (e) {}
 
-const main = document.getElementById("main");
-const controls = document.querySelector(".controls");
-const searchInput = document.getElementById("search");
-const statsEl = document.getElementById("stats");
+const $ = id => document.getElementById(id);
+const card = $("card"), main = $("main");
 
-cats.forEach(c => {
-  const pill = document.createElement("span");
-  pill.className = "pill";
-  pill.dataset.cat = c;
-  pill.textContent = c;
-  controls.appendChild(pill);
-});
-
-function render(){
-  main.innerHTML = "";
-  const q = query.trim().toLowerCase();
-  let shown = 0;
-  let currentCat = null;
-  let catCounts = {};
-
-  const filtered = DATA.filter(d => {
-    const catOk = activeCat === "all" || d.cat === activeCat;
-    const text = (d.q + " " + d.a).toLowerCase();
-    const qOk = !q || text.includes(q);
-    return catOk && qOk;
-  });
-
-  filtered.forEach(d => { catCounts[d.cat] = (catCounts[d.cat]||0)+1; });
-
-  if (filtered.length === 0){
-    main.innerHTML = '<div class="empty">No questions match. Try a different search or category.</div>';
-  }
-
-  filtered.forEach((d) => {
-    if (d.cat !== currentCat){
-      currentCat = d.cat;
-      const h = document.createElement("div");
-      h.className = "cat-heading";
-      h.innerHTML = `${d.cat} <span class="cat-count">${catCounts[d.cat]}</span>`;
-      main.appendChild(h);
-    }
-    shown++;
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `
-      <div class="q">
-        <span class="q-num">Q${DATA.indexOf(d)+1}</span>
-        <span class="q-text">${d.q}</span>
-        <span class="chevron">▶</span>
-      </div>
-      <div class="a-wrap"><div class="a">${d.a}</div></div>
-    `;
-    card.querySelector(".q").addEventListener("click", () => card.classList.toggle("open"));
-    main.appendChild(card);
-  });
-
-  statsEl.textContent = `Showing ${shown} of ${DATA.length} questions across ${cats.length} categories.`;
+function show(n){
+  i = Math.max(0, Math.min(DATA.length - 1, n));
+  const d = DATA[i];
+  $("qtext").innerHTML = d.q;
+  $("a").innerHTML = d.a;
+  $("count").textContent = `Q${i + 1} / ${DATA.length}`;
+  $("cat").textContent = d.cat;
+  $("prog").style.width = ((i + 1) / DATA.length * 100) + "%";
+  $("prev").disabled = i === 0;
+  $("next").disabled = i === DATA.length - 1;
+  card.classList.remove("open");
+  $("q").setAttribute("aria-expanded", "false");
+  main.scrollTop = 0;
+  try { localStorage.setItem(KEY, i); } catch (e) {}
 }
 
-document.querySelectorAll(".pill").forEach(p => {
-  p.addEventListener("click", () => {
-    document.querySelectorAll(".pill").forEach(x => x.classList.remove("active"));
-    p.classList.add("active");
-    activeCat = p.dataset.cat;
-    render();
-  });
+function toggle(){
+  const open = card.classList.toggle("open");
+  $("q").setAttribute("aria-expanded", open);
+}
+
+$("q").addEventListener("click", toggle);
+$("prev").addEventListener("click", () => show(i - 1));
+$("next").addEventListener("click", () => show(i + 1));
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight") show(i + 1);
+  else if (e.key === "ArrowLeft") show(i - 1);
+  else if ((e.key === "Enter" || e.key === " ") && document.activeElement === $("q")) { e.preventDefault(); toggle(); }
 });
 
-searchInput.addEventListener("input", e => {
-  query = e.target.value;
-  render();
-});
-
-render();
+show(i);
 </script>
 </body>
 </html>
